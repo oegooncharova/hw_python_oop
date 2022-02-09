@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Union
 
 
 @dataclass
@@ -42,7 +43,7 @@ class Training:
 
     def get_spent_calories(self) -> float:
         """Получить количество затраченных калорий."""
-        raise NotImplementedError
+        pass
 
     def show_training_info(self) -> InfoMessage:
         """Вернуть информационное сообщение о выполненной тренировке."""
@@ -59,9 +60,10 @@ class Running(Training):
     """Тренировка: бег."""
     RUN_CALORIES_COEFF_1 = 18
     RUN_CALORIES_COEFF_2 = 20
+    MIN_IN_HOUR = 60
 
     def get_spent_calories(self):
-        duration_min: float = self.duration * 60
+        duration_min: float = self.duration * self.MIN_IN_HOUR
         spent_cal_min: float = (
             (self.RUN_CALORIES_COEFF_1
              * self.get_mean_speed()
@@ -76,6 +78,7 @@ class SportsWalking(Training):
     """Тренировка: спортивная ходьба."""
     WALK_CALORIES_COEFF_1 = 0.035
     WALK_CALORIES_COEFF_2 = 0.029
+    MIN_IN_HOUR = 60
 
     def __init__(self, action: int,
                  duration: float,
@@ -90,7 +93,7 @@ class SportsWalking(Training):
             (self.WALK_CALORIES_COEFF_1 * self.weight
              + self.get_mean_speed()**2 // self.height
              * self.WALK_CALORIES_COEFF_2
-             * self.weight) * self.duration * 60
+             * self.weight) * self.duration * self.MIN_IN_HOUR
         )
         return spent_calories
 
@@ -123,7 +126,7 @@ class Swimming(Training):
         )
 
 
-def read_package(workout_type: str, data: list) -> Training:
+def read_package(workout_type: str, data: list) -> Union[Training, str]:
     """Прочитать данные полученные от датчиков."""
     training_types = {
         'SWM': Swimming,
@@ -132,8 +135,10 @@ def read_package(workout_type: str, data: list) -> Training:
     }
     try:
         any_training: Training = training_types[workout_type](*data)
-    except Exception as e:
-        return f'Ошибка: {e}'
+    except KeyError:
+        return 'Неизвестный тип тренировки'
+    except TypeError:
+        return 'Неизвестные данные'
     else:
         return any_training
 
